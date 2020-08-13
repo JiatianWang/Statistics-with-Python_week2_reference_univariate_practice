@@ -129,26 +129,36 @@ sns.boxplot(x = 'RIAGENDRx', y = 'BMXHT',data = da )
 # 
 # Make a boxplot showing the distribution of within-subject differences between the first and second systolic blood pressure measurents ([BPXSY1](https://wwwn.cdc.gov/Nchs/Nhanes/2015-2016/BPX_I.htm#BPXSY1) and [BPXSY2](https://wwwn.cdc.gov/Nchs/Nhanes/2015-2016/BPX_I.htm#BPXSY2)).
 
-# In[7]:
+# In[19]:
 
 
-# insert your code here
+da = pd.read_csv("nhanes_2015_2016.csv")
+da['agegrp'] = pd.cut(da.RIDAGEYR, [20, 30, 40, 50, 60, 70, 80])
+da["RIAGENDRx"] = da.RIAGENDR.replace({1: "Male", 2: "Female"})
+di = da.BPXSY1 - da.BPXSY2
+_ = sns.boxplot(di)
+_.set_title('Difference between first and second SBP')
+_.set_xlabel('Differnce')
 
 
 # __Q4a.__ What proportion of the subjects have a lower SBP on the second reading compared to the first?
 
-# In[8]:
+# In[31]:
 
 
-# insert your code here
+a = (da.BPXSY1) - (da.BPXSY2)
+b = (da.BPXSY1 - da.BPXSY2).dropna()
+
+print(np.mean(a > 0))
+print(np.mean(b > 0))
 
 
 # __Q4b.__ Make side-by-side boxplots of the two systolic blood pressure variables.
 
-# In[9]:
+# In[23]:
 
 
-# insert your code here
+_ = sns.boxplot(data = da.loc[:,['BPXSY1','BPXSY2']]).set_title('Two systolic blood pressure variables')
 
 
 # __Q4c.__ Comment on the variation within either the first or second systolic blood pressure measurements, and the variation in the within-subject differences between the first and second systolic blood pressure measurements.
@@ -157,40 +167,62 @@ sns.boxplot(x = 'RIAGENDRx', y = 'BMXHT',data = da )
 # 
 # Construct a frequency table of household sizes for people within each educational attainment category (the relevant variable is [DMDEDUC2](https://wwwn.cdc.gov/Nchs/Nhanes/2015-2016/DEMO_I.htm#DMDEDUC2)).  Convert the frequencies to proportions.
 
-# In[10]:
+# In[17]:
 
 
-# insert your code here
+dx = da.groupby('DMDEDUC2')['DMDHHSIZ'].value_counts().unstack()
+dx = dx.apply(lambda x: x / x.sum(),axis =1 )
+print(dx.to_string(float_format = '%.3f'))
 
 
 # __Q5a.__ Comment on any major differences among the distributions.
 
 # __Q5b.__ Restrict the sample to people between 30 and 40 years of age.  Then calculate the median household size for women and men within each level of educational attainment.
 
-# In[11]:
+# In[20]:
 
 
-# insert your code here
+da["RIAGENDRx"] = da.RIAGENDR.replace({1: "Male", 2: "Female"})
+da["agegrp"] = pd.cut(da.RIDAGEYR, [30,40])
+da.groupby(['RIAGENDRx','agegrp'])['DMDHHSIZ'].median()
 
 
 # ## Question 6
 # 
 # The participants can be clustered into "maked variance units" (MVU) based on every combination of the variables [SDMVSTRA](https://wwwn.cdc.gov/Nchs/Nhanes/2015-2016/DEMO_I.htm#SDMVSTRA) and [SDMVPSU](https://wwwn.cdc.gov/Nchs/Nhanes/2015-2016/DEMO_I.htm#SDMVPSU).  Calculate the mean age ([RIDAGEYR](https://wwwn.cdc.gov/Nchs/Nhanes/2015-2016/DEMO_I.htm#RIDAGEYR)), height ([BMXHT](https://wwwn.cdc.gov/Nchs/Nhanes/2015-2016/BMX_I.htm#BMXHT)), and BMI ([BMXBMI](https://wwwn.cdc.gov/Nchs/Nhanes/2015-2016/BMX_I.htm#BMXBMI)) for each gender ([RIAGENDR](https://wwwn.cdc.gov/Nchs/Nhanes/2015-2016/DEMO_I.htm#RIAGENDR)), within each MVU, and report the ratio between the largest and smallest mean (e.g. for height) across the MVUs.
 
-# In[12]:
+# In[42]:
 
 
-# insert your code here
+da = pd.read_csv("nhanes_2015_2016.csv")
+da["RIAGENDRx"] = da.RIAGENDR.replace({1: "Male", 2: "Female"})
+a = da.groupby(['SDMVSTRA', 'SDMVPSU','RIAGENDRx'])['RIDAGEYR'].mean().unstack()
+b = da.groupby(['SDMVSTRA', 'SDMVPSU','RIAGENDRx'])['BMXHT'].mean().unstack()
+c = da.groupby(['SDMVSTRA', 'SDMVPSU','RIAGENDRx'])['BMXBMI'].mean().unstack()
+ratio_a = a.max() / a.min()
+ratio_b = b.max() / b.min()
+ratio_c = c.max() / c.min()
+
+print('RatioA:', ratio_a)
+print('RatioB:', ratio_b)
+print('RatioC:', ratio_c)
 
 
 # __Q6a.__ Comment on the extent to which mean age, height, and BMI vary among the MVUs.
 
 # __Q6b.__ Calculate the inter-quartile range (IQR) for age, height, and BMI for each gender and each MVU.  Report the ratio between the largest and smalles IQR across the MVUs.
 
-# In[13]:
+# In[52]:
 
 
-# insert your code here
+mm = da[da["RIAGENDRx"] == 'Male']
+ff = da[da["RIAGENDRx"] == 'Female']
+
+iqr_age_m_grp = mm.groupby(['SDMVSTRA', 'SDMVPSU'])['RIDAGEYR']
+iqr_age_m = (iqr_age_m_grp.quantile(0.75) -  iqr_age_m_grp.quantile(0.25)).max()
+iqr_age_f = (iqr_age_m_grp.quantile(0.75) -  iqr_age_m_grp.quantile(0.25)).min()
+#iqr_age_m_grp
+iqr_age_m - iqr_age_f
 
 
 # __Q6c.__ Comment on the extent to which the IQR for age, height, and BMI vary among the MVUs.
