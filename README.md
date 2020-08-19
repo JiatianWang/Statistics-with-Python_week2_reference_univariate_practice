@@ -1,4 +1,4 @@
-# Statistics-with-Python_week2_reference_univariate_practice
+# Statistics-with-Python_reference_univariate_practice
 ## Statistic Analysis steps:
 
 * Frequency Tables
